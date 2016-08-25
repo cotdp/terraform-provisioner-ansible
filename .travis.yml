@@ -1,0 +1,41 @@
+sudo: false
+
+language: go
+
+go:
+- 1.6
+
+env:
+- GIMME_OS=linux   GIMME_ARCH=amd64
+- GIMME_OS=darwin  GIMME_ARCH=amd64
+- GIMME_OS=windows GIMME_ARCH=amd64
+
+# see https://github.com/travis-ci/gimme/issues/25#issuecomment-226958107
+before_install:
+- curl -o gimme -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
+- chmod u+x gimme
+- unset GOROOT GOTOOLDIR
+- eval "$(./gimme $TRAVIS_GO_VERSION)"
+- go version
+- go env
+
+install:
+- date -u +"%Y-%m-%dT%H:%M:%SZ"
+- go get -d -v ./...
+
+script:
+- go build -v -o terraform-provisioner-ansible
+- tar czvf terraform-provisioner-ansible_${TRAVIS_TAG}_${GIMME_OS}_${GIMME_ARCH}.tar.gz terraform-provisioner-ansible
+
+# setup with "travis setup releases"
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: FtlLOLTb65/fO1izYYUzqPqT7O8mpCY/ab5SZLLRM5hrxrYj8bKq+OfoPJbwIfLFnhSrOna/dtTH87wp8CsC4R85A8OxVo3pPchAu2X94dN58/aabPYxUQunuTuSZvoJmOveTLfdQhkEtCnGGopNo/qyJHh+uPucw/5gKlZa1mdU+A0MZ0kzo8HGnk8mQvyvgG4SUlTK0vQHUKDhvWGUV55r1cIXEU+FIF2BQNPdPdlGabq5e5FEkDLQzhiWjlMzb9+XBdIlI+lLNRU8Sudox2jtqS19pApiVXkrkYlv8YKVLCZMgF9fm/vSeYrevq2HV+lQC6+/LCCK2meNFKB/swBlGu9v/IBPJntO4Tc6efpO5IrPg+x7e7cabDQts4lGXznjD/4UsdwUT9HfjyDHSQbA7wq/q9iDFVOnpoiHGmP404mekVWJnnpwixkXafMssPtCQvF7ejCAJl0qo/khbmBFfsFxkvqDVui5ab/xblD2ZdB+KXwz2A3uSwM1Uga+xP1mlAqR4h0+ssaW8PUFL5Nbdjt5ulIpZBcdouLZD1PANe/reiMlYS5mIfJVUr+2c19zrGpFXeHmOKE5aN0SLoKsyK9iOoZsV/gdn/12Uuk/PUKhVbdpheCmssI974jQvw3oZR1VAVlnGfX5I4YxzoBNkSSqP+TQz/m4D5j4rGM=
+  file: terraform-provisioner-ansible_*
+  file_glob: true
+  on:
+    repo: cotdp/terraform-provisioner-ansible
+    branch: centos-flavour
+    tags: true
